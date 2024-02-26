@@ -1,0 +1,662 @@
+<html>
+<head>
+<title>Iowa_Housing_Code.ipynb</title>
+<meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+<style type="text/css">
+.s0 { color: #8c8c8c; font-style: italic;}
+.s1 { color: #0033b3;}
+.s2 { color: #080808;}
+.s3 { color: #067d17;}
+.s4 { color: #1750eb;}
+.s5 { color: #0037a6;}
+</style>
+</head>
+<body bgcolor="#ffffff">
+<table CELLSPACING=0 CELLPADDING=5 COLS=1 WIDTH="100%" BGCOLOR="#c0c0c0" >
+<tr><td><center>
+<font face="Arial, Helvetica" color="#000000">
+Iowa_Housing_Code.ipynb</font>
+</center></td></tr></table>
+<pre><span class="s0">#%% 
+</span><span class="s1">import </span><span class="s2">numpy </span><span class="s1">as </span><span class="s2">np</span>
+<span class="s1">import </span><span class="s2">pandas </span><span class="s1">as </span><span class="s2">pd</span>
+<span class="s1">from </span><span class="s2">sklearn.preprocessing </span><span class="s1">import </span><span class="s2">StandardScaler</span>
+<span class="s1">from </span><span class="s2">sklearn </span><span class="s1">import </span><span class="s2">linear_model </span><span class="s1">as </span><span class="s2">lm</span>
+<span class="s1">from </span><span class="s2">sklearn.metrics </span><span class="s1">import </span><span class="s2">mean_squared_error</span>
+
+<span class="s2">original_data = pd.read_excel(</span><span class="s3">&quot;Original_Data.xlsx&quot;</span><span class="s2">, header = </span><span class="s4">3</span><span class="s2">, usecols = </span><span class="s3">&quot;A:CC&quot;</span><span class="s2">)</span>
+<span class="s2">hull_data = pd.read_csv(</span><span class="s3">'Houseprice_data_scaled.csv'</span><span class="s2">) </span>
+
+<span class="s2">lr = lm.LinearRegression()</span>
+<span class="s2">rg = lm.Ridge(alpha = </span><span class="s4">0.01</span><span class="s2">)</span>
+<span class="s2">ls = lm.Lasso(alpha = </span><span class="s4">0.01</span><span class="s2">)</span>
+
+<span class="s2">scaler = StandardScaler()</span>
+
+<span class="s0">#%% md 
+</span><span class="s2">### Scaling the data 
+</span><span class="s0">#%% 
+#Finding Optimal Alphas</span>
+<span class="s1">def </span><span class="s2">AlphaOptimizer(method, X_train, y_train, X_val, y_val):</span>
+    
+    <span class="s2">mses=[]</span>
+    
+    <span class="s1">if </span><span class="s2">method == </span><span class="s3">&quot;Ridge&quot;</span><span class="s2">:</span>
+        <span class="s2">alphas=[</span><span class="s4">0.01</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">, </span><span class="s4">0.02</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">, </span><span class="s4">0.03</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">, </span><span class="s4">0.04</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">, </span><span class="s4">0.05</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">, </span><span class="s4">0.075</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">,</span><span class="s4">0.1</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">,</span><span class="s4">0.2</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">, </span><span class="s4">0.4</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">]</span>
+        <span class="s1">for </span><span class="s2">alpha </span><span class="s1">in </span><span class="s2">alphas:</span>
+            <span class="s2">ridge = lm.Ridge(alpha=alpha)</span>
+            <span class="s2">ridge.fit(X_train,y_train)</span>
+            <span class="s2">pred = ridge.predict(X_val)</span>
+            <span class="s2">mses.append(mean_squared_error(y_val,pred))</span>
+            <span class="s1">return </span><span class="s2">min(mses)</span>
+        
+    <span class="s1">elif </span><span class="s2">method == </span><span class="s3">&quot;Lasso&quot;</span><span class="s2">:</span>
+        <span class="s2">alphas=[</span><span class="s4">0.01</span><span class="s2">/</span><span class="s4">2</span><span class="s2">, </span><span class="s4">0.02</span><span class="s2">/</span><span class="s4">2</span><span class="s2">, </span><span class="s4">0.03</span><span class="s2">/</span><span class="s4">2</span><span class="s2">, </span><span class="s4">0.04</span><span class="s2">/</span><span class="s4">2</span><span class="s2">, </span><span class="s4">0.05</span><span class="s2">/</span><span class="s4">2</span><span class="s2">, </span><span class="s4">0.075</span><span class="s2">/</span><span class="s4">2</span><span class="s2">, </span><span class="s4">0.1</span><span class="s2">/</span><span class="s4">2</span><span class="s2">]</span>
+        <span class="s1">for </span><span class="s2">alpha </span><span class="s1">in </span><span class="s2">alphas:</span>
+            <span class="s2">lasso = lm.Lasso(alpha=alpha)</span>
+            <span class="s2">lasso.fit(X_train,y_train)</span>
+            <span class="s2">pred = lasso.predict(X_val)</span>
+            <span class="s2">mses.append(mean_squared_error(y_val,pred))</span>
+            <span class="s1">return </span><span class="s2">min(mses)</span>
+        
+    <span class="s1">else</span><span class="s2">:</span>
+        <span class="s1">return</span><span class="s2">(</span><span class="s3">&quot;Not available method&quot;</span><span class="s2">)</span>
+<span class="s0">#%% md 
+</span><span class="s2">### Imputation Strategy 1: Replace missing data with the mean of data 
+</span><span class="s0">#%% 
+</span>
+<span class="s2">imputed_data_1 = original_data.copy()</span>
+
+<span class="s2">nan_map = imputed_data_1.isna()</span>
+
+<span class="s2">mean = imputed_data_1[</span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">].mean()</span>
+
+<span class="s1">for </span><span class="s2">i, row </span><span class="s1">in </span><span class="s2">nan_map.iterrows():</span>
+    <span class="s1">if </span><span class="s2">row[</span><span class="s3">'LotFrontage'</span><span class="s2">]:</span>
+        <span class="s2">imputed_data_1[</span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">][i] = mean</span>
+
+<span class="s2">train1 = hull_data[:</span><span class="s4">1800</span><span class="s2">]</span>
+
+<span class="s2">train1.insert(</span><span class="s4">0</span><span class="s2">, </span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">, imputed_data_1.loc[:</span><span class="s4">1799</span><span class="s2">, [</span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">]].values)</span>
+
+<span class="s2">val1 = hull_data[</span><span class="s4">1800</span><span class="s2">:</span><span class="s4">2400</span><span class="s2">]</span>
+
+<span class="s2">val1.insert(</span><span class="s4">0</span><span class="s2">, </span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">, imputed_data_1.loc[</span><span class="s4">1800</span><span class="s2">:</span><span class="s4">2399</span><span class="s2">, [</span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">]].values)</span>
+
+<span class="s2">X_train1, X_val1 = train1.drop(</span><span class="s3">'Sale Price'</span><span class="s2">, axis=</span><span class="s4">1</span><span class="s2">), val1.drop(</span><span class="s3">'Sale Price'</span><span class="s2">, axis=</span><span class="s4">1</span><span class="s2">)</span>
+<span class="s2">y_train1, y_val1 = train1[[</span><span class="s3">'Sale Price'</span><span class="s2">]], val1[[</span><span class="s3">'Sale Price'</span><span class="s2">]] </span>
+
+<span class="s2">X_train1 = scaler.fit_transform(X_train1)</span>
+<span class="s2">X_val1 = scaler.transform(X_val1)</span>
+
+<span class="s0">#Linear Regression</span>
+<span class="s2">strat1_linear = lr.fit(X_train1, y_train1)</span>
+<span class="s2">val1_lr_pred = strat1_linear.predict(X_val1)</span>
+<span class="s2">print(</span><span class="s3">&quot;Linear Regression:&quot;</span><span class="s2">)</span>
+<span class="s2">print(</span><span class="s3">&quot;R-Score:&quot;</span><span class="s2">, strat1_linear.score(X_train1, y_train1))</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE:&quot;</span><span class="s2">, mean_squared_error(y_val1, val1_lr_pred))</span>
+
+<span class="s0">#Ridge</span>
+<span class="s2">strat1_ridge = rg.fit(X_train1, y_train1)</span>
+<span class="s2">val1_rg_pred = strat1_ridge.predict(X_val1)</span>
+<span class="s2">print(</span><span class="s3">&quot;</span><span class="s5">\n</span><span class="s3">Ridge:&quot;</span><span class="s2">)</span>
+<span class="s2">print(</span><span class="s3">&quot;R-Score:&quot;</span><span class="s2">, strat1_ridge.score(X_train1, y_train1))</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE:&quot;</span><span class="s2">, AlphaOptimizer(</span><span class="s3">&quot;Ridge&quot;</span><span class="s2">, X_train1, y_train1, X_val1, y_val1))</span>
+
+<span class="s0">#Lasso</span>
+<span class="s2">strat1_lasso = ls.fit(X_train1, y_train1)</span>
+<span class="s2">val1_ls_pred = strat1_lasso.predict(X_val1)</span>
+<span class="s2">print(</span><span class="s3">&quot;</span><span class="s5">\n</span><span class="s3">Lasso:&quot;</span><span class="s2">)</span>
+<span class="s2">print(</span><span class="s3">&quot;R-Score:&quot;</span><span class="s2">, strat1_lasso.score(X_train1, y_train1))</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE:&quot;</span><span class="s2">, AlphaOptimizer(</span><span class="s3">&quot;Lasso&quot;</span><span class="s2">, X_train1, y_train1, X_val1, y_val1))</span>
+<span class="s0">#%% md 
+</span><span class="s2">### Imputation Strategy 2: Replace missing data with the median of data 
+</span><span class="s0">#%% 
+</span>
+<span class="s2">imputed_data_2 = original_data.copy()</span>
+
+<span class="s2">nan_map = imputed_data_2.isna()</span>
+
+<span class="s2">median = imputed_data_2[</span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">].median()</span>
+
+<span class="s1">for </span><span class="s2">i, row </span><span class="s1">in </span><span class="s2">nan_map.iterrows():</span>
+    <span class="s1">if </span><span class="s2">row[</span><span class="s3">'LotFrontage'</span><span class="s2">]:</span>
+        <span class="s2">imputed_data_2[</span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">][i] = median</span>
+
+<span class="s2">train2 = hull_data[:</span><span class="s4">1800</span><span class="s2">].copy()</span>
+<span class="s2">val2 = hull_data[</span><span class="s4">1800</span><span class="s2">:</span><span class="s4">2400</span><span class="s2">].copy()</span>
+
+<span class="s2">scaled_train_data = scaler.fit_transform(imputed_data_2.loc[:</span><span class="s4">1799</span><span class="s2">, [</span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">]])</span>
+<span class="s2">scaled_val_data = scaler.fit_transform(imputed_data_2.loc[</span><span class="s4">1800</span><span class="s2">:</span><span class="s4">2399</span><span class="s2">, [</span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">]])</span>
+
+<span class="s2">train2.insert(</span><span class="s4">0</span><span class="s2">, </span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">, scaled_train_data)</span>
+
+<span class="s2">val2.insert(</span><span class="s4">0</span><span class="s2">, </span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">, scaled_val_data)</span>
+
+<span class="s2">X_train2, X_val2 = train2.drop(</span><span class="s3">'Sale Price'</span><span class="s2">, axis=</span><span class="s4">1</span><span class="s2">), val2.drop(</span><span class="s3">'Sale Price'</span><span class="s2">, axis=</span><span class="s4">1</span><span class="s2">)</span>
+<span class="s2">y_train2, y_val2 = train2[[</span><span class="s3">'Sale Price'</span><span class="s2">]], val2[[</span><span class="s3">'Sale Price'</span><span class="s2">]] </span>
+
+<span class="s2">X_train2 = scaler.fit_transform(X_train2)</span>
+<span class="s2">X_val2 = scaler.transform(X_val2)</span>
+
+<span class="s0">#Linear Regression</span>
+<span class="s2">strat2_linear = lr.fit(X_train2, y_train2)</span>
+<span class="s2">val2_lr_pred = strat2_linear.predict(X_val2)</span>
+<span class="s2">print(</span><span class="s3">&quot;Linear Regression:&quot;</span><span class="s2">)</span>
+<span class="s2">print(</span><span class="s3">&quot;R-Score:&quot;</span><span class="s2">, strat2_linear.score(X_train2, y_train2))</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE:&quot;</span><span class="s2">, mean_squared_error(y_val2, val2_lr_pred))</span>
+
+<span class="s0">#Ridge</span>
+<span class="s2">strat2_ridge = rg.fit(X_train2, y_train2)</span>
+<span class="s2">val2_rg_pred = strat2_ridge.predict(X_val2)</span>
+<span class="s2">print(</span><span class="s3">&quot;</span><span class="s5">\n</span><span class="s3">Ridge:&quot;</span><span class="s2">)</span>
+<span class="s2">print(</span><span class="s3">&quot;R-Score:&quot;</span><span class="s2">, strat2_ridge.score(X_train2, y_train2))</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE:&quot;</span><span class="s2">, AlphaOptimizer(</span><span class="s3">&quot;Ridge&quot;</span><span class="s2">, X_train2, y_train2, X_val2, y_val2))</span>
+
+<span class="s0">#Lasso</span>
+<span class="s2">strat2_lasso = ls.fit(X_train2, y_train2)</span>
+<span class="s2">val2_ls_pred = strat2_lasso.predict(X_val2)</span>
+<span class="s2">print(</span><span class="s3">&quot;</span><span class="s5">\n</span><span class="s3">Lasso:&quot;</span><span class="s2">)</span>
+<span class="s2">print(</span><span class="s3">&quot;R-Score:&quot;</span><span class="s2">, strat2_lasso.score(X_train2, y_train2))</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE:&quot;</span><span class="s2">, AlphaOptimizer(</span><span class="s3">&quot;Lasso&quot;</span><span class="s2">, X_train2, y_train2, X_val2, y_val2))</span>
+<span class="s0">#%% md 
+</span><span class="s2">### Imputation Strategy 3: Replace missing data with linear interpolation prediction 
+</span><span class="s0">#%% 
+</span><span class="s2">imputed_data_3 = original_data.copy()</span>
+
+<span class="s2">nan_map = imputed_data_3.isna()</span>
+
+<span class="s2">last_valid_value = imputed_data_3[</span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">][imputed_data_3[</span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">].first_valid_index()]</span>
+
+<span class="s1">for </span><span class="s2">i, row </span><span class="s1">in </span><span class="s2">nan_map.iterrows():</span>
+    <span class="s1">if </span><span class="s2">row[</span><span class="s3">'LotFrontage'</span><span class="s2">]:</span>
+        <span class="s2">j = i</span>
+        <span class="s1">while </span><span class="s2">nan_map[</span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">][j]:</span>
+            <span class="s2">j += </span><span class="s4">1</span>
+        <span class="s2">next_valid_value = imputed_data_3[</span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">][j]</span>
+        <span class="s2">imputed_data_3[</span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">][i] = (next_valid_value + last_valid_value) / </span><span class="s4">2</span>
+    <span class="s1">else</span><span class="s2">:</span>
+        <span class="s2">last_valid_value = imputed_data_3[</span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">][i]</span>
+
+<span class="s2">train3 = hull_data[:</span><span class="s4">1800</span><span class="s2">]</span>
+
+<span class="s2">train3.insert(</span><span class="s4">0</span><span class="s2">, </span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">, imputed_data_3.loc[:</span><span class="s4">1799</span><span class="s2">, [</span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">]].values)</span>
+
+<span class="s2">val3 = hull_data[</span><span class="s4">1800</span><span class="s2">:</span><span class="s4">2400</span><span class="s2">]</span>
+
+<span class="s2">val3.insert(</span><span class="s4">0</span><span class="s2">, </span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">, imputed_data_3.loc[</span><span class="s4">1800</span><span class="s2">:</span><span class="s4">2399</span><span class="s2">, [</span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">]].values)</span>
+
+<span class="s2">X_train3, X_val3 = train3.drop(</span><span class="s3">'Sale Price'</span><span class="s2">, axis=</span><span class="s4">1</span><span class="s2">), val3.drop(</span><span class="s3">'Sale Price'</span><span class="s2">, axis=</span><span class="s4">1</span><span class="s2">)</span>
+<span class="s2">y_train3, y_val3 = train3[[</span><span class="s3">'Sale Price'</span><span class="s2">]], val3[[</span><span class="s3">'Sale Price'</span><span class="s2">]] </span>
+
+<span class="s2">X_train3 = scaler.fit_transform(X_train3)</span>
+<span class="s2">X_val3 = scaler.transform(X_val3)</span>
+
+<span class="s0">#Linear Regression</span>
+<span class="s2">strat3_linear = lr.fit(X_train3, y_train3)</span>
+<span class="s2">val3_lr_pred = strat3_linear.predict(X_val3)</span>
+<span class="s2">print(</span><span class="s3">&quot;Linear Regression:&quot;</span><span class="s2">)</span>
+<span class="s2">print(</span><span class="s3">&quot;R-Score:&quot;</span><span class="s2">, strat3_linear.score(X_train3, y_train3))</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE:&quot;</span><span class="s2">, mean_squared_error(y_val3, val3_lr_pred))</span>
+
+<span class="s0">#Ridge</span>
+<span class="s2">strat3_ridge = rg.fit(X_train3, y_train3)</span>
+<span class="s2">val3_rg_pred = strat3_ridge.predict(X_val3)</span>
+<span class="s2">print(</span><span class="s3">&quot;</span><span class="s5">\n</span><span class="s3">Ridge:&quot;</span><span class="s2">)</span>
+<span class="s2">print(</span><span class="s3">&quot;R-Score:&quot;</span><span class="s2">, strat3_ridge.score(X_train3, y_train3))</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE:&quot;</span><span class="s2">, AlphaOptimizer(</span><span class="s3">&quot;Ridge&quot;</span><span class="s2">, X_train3, y_train3, X_val3, y_val3))</span>
+
+<span class="s0">#Lasso</span>
+<span class="s2">strat3_lasso = ls.fit(X_train3, y_train3)</span>
+<span class="s2">val3_ls_pred = strat3_lasso.predict(X_val3)</span>
+<span class="s2">print(</span><span class="s3">&quot;</span><span class="s5">\n</span><span class="s3">Lasso:&quot;</span><span class="s2">)</span>
+<span class="s2">print(</span><span class="s3">&quot;R-Score:&quot;</span><span class="s2">, strat3_lasso.score(X_train3, y_train3))</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE:&quot;</span><span class="s2">, AlphaOptimizer(</span><span class="s3">&quot;Lasso&quot;</span><span class="s2">, X_train3, y_train3, X_val3, y_val3))</span>
+<span class="s0">#%% 
+</span><span class="s2">scaled_data = scaler.fit_transform(imputed_data_2.loc[:, [</span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">]])</span>
+
+<span class="s2">data_a = hull_data.copy()</span>
+<span class="s2">print(data_a)</span>
+<span class="s2">data_a.insert(</span><span class="s4">0</span><span class="s2">, </span><span class="s3">&quot;LotFrontage&quot;</span><span class="s2">, scaled_data)</span>
+
+<span class="s2">print(scaled_data)</span>
+<span class="s2">print(data_a)</span>
+<span class="s0">#%% md 
+</span><span class="s2">### Part B: Adding Lot Shape 
+</span><span class="s0">#%% md 
+</span><span class="s2">Lot Shape has 4 Categories.  
+- let 0 = regular lot shape 
+- let 1 = slightly irregular 
+- let 2 = moderately irregular 
+- let 3 = irregular 
+</span><span class="s0">#%% md 
+</span><span class="s2">### Create Categorical Variable 
+</span><span class="s0">#%% 
+</span><span class="s2">lot_shapes = []</span>
+<span class="s1">for </span><span class="s2">row </span><span class="s1">in </span><span class="s2">original_data[</span><span class="s3">'LotShape'</span><span class="s2">]:</span>
+    <span class="s1">if </span><span class="s2">row == </span><span class="s3">'Reg'</span><span class="s2">:</span>
+        <span class="s2">lot_shapes.append(</span><span class="s4">0</span><span class="s2">)</span>
+    <span class="s1">elif </span><span class="s2">row == </span><span class="s3">'IR1'</span><span class="s2">:</span>
+        <span class="s2">lot_shapes.append(</span><span class="s4">1</span><span class="s2">)</span>
+    <span class="s1">elif </span><span class="s2">row == </span><span class="s3">'IR2'</span><span class="s2">:</span>
+        <span class="s2">lot_shapes.append(</span><span class="s4">2</span><span class="s2">)</span>
+    <span class="s1">else</span><span class="s2">:</span>
+        <span class="s2">lot_shapes.append(</span><span class="s4">3</span><span class="s2">)</span>
+
+<span class="s2">Lot_Shape = pd.DataFrame(lot_shapes, columns=[</span><span class="s3">'LotShape'</span><span class="s2">])</span>
+
+<span class="s2">print(Lot_Shape)</span>
+<span class="s0">#%% md 
+</span><span class="s2">### Adding LotShape to DataFrame 
+</span><span class="s0">#%% 
+</span><span class="s2">data_b = pd.concat([data_a, Lot_Shape], axis=</span><span class="s4">1</span><span class="s2">)</span>
+<span class="s2">data_b.head()</span>
+<span class="s0">#%% md 
+</span><span class="s2">### Linear Regression 
+</span><span class="s0">#%% 
+</span><span class="s2">train = data_b.iloc[:</span><span class="s4">1800</span><span class="s2">]</span>
+<span class="s2">validation = data_b.iloc[</span><span class="s4">1800</span><span class="s2">:</span><span class="s4">2400</span><span class="s2">]</span>
+<span class="s2">test = data_b.iloc[</span><span class="s4">2400</span><span class="s2">:</span><span class="s4">2908</span><span class="s2">]</span>
+
+<span class="s2">X_train = train.drop(</span><span class="s3">'Sale Price'</span><span class="s2">, axis=</span><span class="s4">1</span><span class="s2">)</span>
+<span class="s2">X_val = validation.drop(</span><span class="s3">'Sale Price'</span><span class="s2">, axis=</span><span class="s4">1</span><span class="s2">)</span>
+<span class="s2">Y_train, Y_val = train[[</span><span class="s3">'Sale Price'</span><span class="s2">]], validation[[</span><span class="s3">'Sale Price'</span><span class="s2">]]</span>
+<span class="s0">#%% 
+</span><span class="s1">from </span><span class="s2">sklearn.linear_model </span><span class="s1">import </span><span class="s2">LinearRegression</span>
+<span class="s1">from </span><span class="s2">sklearn.metrics </span><span class="s1">import </span><span class="s2">mean_absolute_error</span>
+
+<span class="s2">linear_reg = LinearRegression()</span>
+<span class="s2">linear_reg.fit(X_train, Y_train)</span>
+<span class="s2">prediction = linear_reg.predict(X_train)</span>
+<span class="s2">mse = mean_squared_error(Y_train, prediction)</span>
+<span class="s2">print(</span><span class="s3">&quot;Training Set:&quot;</span><span class="s2">)</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE: &quot;</span><span class="s2">+ str(mse))</span>
+<span class="s2">print(</span><span class="s3">&quot;RMSE: &quot; </span><span class="s2">+ str(np.sqrt(mse)))</span>
+<span class="s2">print(</span><span class="s3">&quot;MAE: &quot; </span><span class="s2">+ str(mean_absolute_error(Y_train, prediction)))</span>
+
+<span class="s2">prediction_val = linear_reg.predict(X_val)</span>
+<span class="s2">mse_val = mean_squared_error(Y_val, prediction_val)</span>
+<span class="s2">print(</span><span class="s3">&quot;</span><span class="s5">\n</span><span class="s3">Validation Set:&quot;</span><span class="s2">)</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE:&quot; </span><span class="s2">+ str(mse_val))</span>
+<span class="s2">print(</span><span class="s3">&quot;RMSE: &quot; </span><span class="s2">+ str(np.sqrt(mse_val)))</span>
+<span class="s2">print(</span><span class="s3">&quot;MAE: &quot; </span><span class="s2">+ str(mean_absolute_error(Y_val, prediction_val)))</span>
+<span class="s0">#%% 
+</span><span class="s2">coeffs = pd.DataFrame(</span>
+    <span class="s2">[</span>
+        <span class="s2">[</span><span class="s3">'intercept'</span><span class="s2">] + list(X_train.columns),</span>
+        <span class="s2">list(linear_reg.intercept_) + list(linear_reg.coef_[</span><span class="s4">0</span><span class="s2">])</span>
+    <span class="s2">]</span>
+<span class="s2">).transpose().set_index(</span><span class="s4">0</span><span class="s2">)</span>
+<span class="s2">coeffs</span>
+<span class="s0">#%% md 
+</span><span class="s2">### Lasso Regression, alpha = 0.01 
+</span><span class="s0">#%% 
+# %%sql</span>
+
+<span class="s1">from </span><span class="s2">sklearn.linear_model </span><span class="s1">import </span><span class="s2">Lasso</span>
+
+<span class="s2">lasso_reg = Lasso(alpha = </span><span class="s4">0.01</span><span class="s2">)</span>
+<span class="s2">lasso_reg.fit(X_train, Y_train)</span>
+<span class="s2">coeffs = pd.DataFrame([[</span><span class="s3">'intercept'</span><span class="s2">] + list(X_train.columns),</span>
+        <span class="s2">list(lasso_reg.intercept_) + list(lasso_reg.coef_)]).transpose().set_index(</span><span class="s4">0</span><span class="s2">)</span>
+<span class="s2">coeffs</span>
+<span class="s0">#%% 
+</span><span class="s2">prediction = lasso_reg.predict(X_train)</span>
+<span class="s2">mse = mean_squared_error(Y_train, prediction)</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE: &quot;</span><span class="s2">+ str(mse))</span>
+<span class="s2">print(</span><span class="s3">&quot;RMSE: &quot; </span><span class="s2">+ str(np.sqrt(mse)))</span>
+<span class="s2">print(</span><span class="s3">&quot;MAE: &quot; </span><span class="s2">+ str(mean_absolute_error(Y_train, prediction)))</span>
+<span class="s2">prediction1 = lasso_reg.predict(X_val)</span>
+<span class="s2">mse1 = mean_squared_error(Y_train, prediction)</span>
+<span class="s2">print(mse1)</span>
+<span class="s2">print(</span><span class="s3">&quot;RMSE: &quot; </span><span class="s2">+ str(np.sqrt(mse1)))</span>
+<span class="s2">print(</span><span class="s3">&quot;MAE: &quot; </span><span class="s2">+ str(mean_absolute_error(Y_train, prediction)))</span>
+<span class="s0">#%% md 
+</span><span class="s2">### Ridge Regression 
+</span><span class="s0">#%% 
+</span><span class="s1">from </span><span class="s2">sklearn.linear_model </span><span class="s1">import </span><span class="s2">Ridge</span>
+
+<span class="s2">alpha = </span><span class="s4">1800</span><span class="s2">*</span><span class="s4">0.01</span>
+<span class="s2">ridge_reg = Ridge(alpha=alpha)</span>
+<span class="s2">ridge_reg.fit(X_train, Y_train)</span>
+<span class="s2">prediction = ridge_reg.predict(X_train)</span>
+<span class="s2">mse = mean_squared_error(Y_train, prediction)</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE: &quot;</span><span class="s2">+ str(mse))</span>
+<span class="s2">print(</span><span class="s3">&quot;RMSE: &quot; </span><span class="s2">+ str(np.sqrt(mse)))</span>
+<span class="s2">print(</span><span class="s3">&quot;MAE: &quot; </span><span class="s2">+ str(mean_absolute_error(Y_train, prediction)))</span>
+<span class="s2">prediction1 = ridge_reg.predict(X_val)</span>
+<span class="s2">mse1 = mean_squared_error(Y_train, prediction)</span>
+<span class="s2">print(mse1)</span>
+<span class="s2">print(</span><span class="s3">&quot;RMSE: &quot; </span><span class="s2">+ str(np.sqrt(mse1)))</span>
+<span class="s2">print(</span><span class="s3">&quot;MAE: &quot; </span><span class="s2">+ str(mean_absolute_error(Y_train, prediction)))</span>
+<span class="s0">#%% md 
+</span><span class="s2">### Part C 
+</span><span class="s0">#%% md 
+</span><span class="s2">## Additional Feature #1: House Style 
+</span><span class="s0">#%% md 
+</span><span class="s2">### Creating Dummies for Types of House Style 
+</span><span class="s0">#%% 
+</span><span class="s2">HouseStyle_types = []</span>
+<span class="s2">HouseStyle = {}</span>
+
+<span class="s1">for </span><span class="s2">i </span><span class="s1">in </span><span class="s2">original_data[</span><span class="s3">'HouseStyle'</span><span class="s2">]:</span>
+    <span class="s1">if </span><span class="s2">i </span><span class="s1">not in </span><span class="s2">HouseStyle_types:</span>
+        <span class="s2">HouseStyle_types.append(i)</span>
+        <span class="s2">HouseStyle[i] = []</span>
+
+<span class="s1">for </span><span class="s2">i </span><span class="s1">in </span><span class="s2">original_data[</span><span class="s3">'HouseStyle'</span><span class="s2">]:</span>
+    <span class="s1">for </span><span class="s2">j </span><span class="s1">in </span><span class="s2">range(len(HouseStyle_types)):</span>
+        <span class="s1">if </span><span class="s2">i == HouseStyle_types[j]:</span>
+            <span class="s2">HouseStyle[HouseStyle_types[j]].append(</span><span class="s4">1</span><span class="s2">)</span>
+        <span class="s1">else</span><span class="s2">:</span>
+            <span class="s2">HouseStyle[HouseStyle_types[j]].append(</span><span class="s4">0</span><span class="s2">)</span>
+
+<span class="s2">HouseStyle = pd.DataFrame.from_dict(HouseStyle)</span>
+<span class="s2">HouseStyle.drop(</span><span class="s3">'2Story'</span><span class="s2">, axis=</span><span class="s4">1</span><span class="s2">, inplace=</span><span class="s1">True</span><span class="s2">)</span>
+<span class="s0"># 2Story is the omitted category, dropped this column from the data</span>
+<span class="s2">HouseStyle.head()</span>
+<span class="s0">#%% md 
+</span><span class="s2">## Additional Feature #2: Exterior 1 Style 
+</span><span class="s0">#%% md 
+</span><span class="s2">### Creating Dummies for Types of House Style 
+</span><span class="s0">#%% 
+</span><span class="s2">Exterior1st_types = []</span>
+<span class="s2">Exterior1st = {}</span>
+
+<span class="s1">for </span><span class="s2">i </span><span class="s1">in </span><span class="s2">original_data[</span><span class="s3">'Exterior1st'</span><span class="s2">]:</span>
+    <span class="s1">if </span><span class="s2">i </span><span class="s1">not in </span><span class="s2">Exterior1st_types:</span>
+        <span class="s2">Exterior1st_types.append(i)</span>
+        <span class="s2">Exterior1st[i] = []</span>
+
+<span class="s1">for </span><span class="s2">i </span><span class="s1">in </span><span class="s2">original_data[</span><span class="s3">'Exterior1st'</span><span class="s2">]:</span>
+    <span class="s1">for </span><span class="s2">j </span><span class="s1">in </span><span class="s2">range(len(Exterior1st_types)):</span>
+        <span class="s1">if </span><span class="s2">i == Exterior1st_types[j]:</span>
+            <span class="s2">Exterior1st[Exterior1st_types[j]].append(</span><span class="s4">1</span><span class="s2">)</span>
+        <span class="s1">else</span><span class="s2">:</span>
+            <span class="s2">Exterior1st[Exterior1st_types[j]].append(</span><span class="s4">0</span><span class="s2">)</span>
+
+<span class="s2">Exterior1st = pd.DataFrame.from_dict(Exterior1st)</span>
+<span class="s2">Exterior1st = Exterior1st[Exterior1st.columns[:-</span><span class="s4">1</span><span class="s2">]]</span>
+<span class="s2">Exterior1st.drop(</span><span class="s3">'VinylSd'</span><span class="s2">, axis=</span><span class="s4">1</span><span class="s2">, inplace=</span><span class="s1">True</span><span class="s2">)</span>
+<span class="s0"># VinylSd is the omitted category, dropped this column from the data</span>
+<span class="s2">Exterior1st.head()</span>
+<span class="s0">#%% md 
+</span><span class="s2">## Adding Additional Features to DataFrame 
+</span><span class="s0">#%% 
+</span><span class="s2">data_c = pd.concat([data_b, HouseStyle, Exterior1st], axis=</span><span class="s4">1</span><span class="s2">)</span>
+<span class="s2">data_c = data_c[[col </span><span class="s1">for </span><span class="s2">col </span><span class="s1">in </span><span class="s2">data_c.columns </span><span class="s1">if </span><span class="s2">col != </span><span class="s3">'Sale Price'</span><span class="s2">] + [</span><span class="s3">'Sale Price'</span><span class="s2">]]</span>
+
+<span class="s2">data_c.head()</span>
+<span class="s0">#%% md 
+</span><span class="s2">## Linear regression 
+</span><span class="s0">#%% 
+</span><span class="s2">train = data_c.iloc[:</span><span class="s4">1800</span><span class="s2">] </span>
+<span class="s2">val = data_c.iloc[</span><span class="s4">1800</span><span class="s2">:</span><span class="s4">2400</span><span class="s2">]</span>
+<span class="s2">test = data_c.iloc[</span><span class="s4">2400</span><span class="s2">:</span><span class="s4">2908</span><span class="s2">]</span>
+
+<span class="s2">X_train = train.drop(</span><span class="s3">'Sale Price'</span><span class="s2">, axis=</span><span class="s4">1</span><span class="s2">)</span>
+<span class="s2">X_val = val.drop(</span><span class="s3">'Sale Price'</span><span class="s2">, axis=</span><span class="s4">1</span><span class="s2">)</span>
+<span class="s2">y_train, y_val = train[[</span><span class="s3">'Sale Price'</span><span class="s2">]], val[[</span><span class="s3">'Sale Price'</span><span class="s2">]]</span>
+<span class="s0">#%% 
+</span><span class="s2">lr=LinearRegression()</span>
+<span class="s2">lr.fit(X_train,y_train)</span>
+<span class="s2">pred=lr.predict(X_train)</span>
+<span class="s2">print(</span><span class="s3">&quot;Train MSE:&quot;</span><span class="s2">, mean_squared_error(y_train,pred))</span>
+<span class="s2">pred=lr.predict(X_val)</span>
+<span class="s2">print(</span><span class="s3">&quot;Validation MSE:&quot;</span><span class="s2">, mean_squared_error(y_val,pred))</span>
+<span class="s0">#%% 
+# Create dataFrame with corresponding feature and its respective coefficients</span>
+<span class="s2">coeffs = pd.DataFrame(</span>
+    <span class="s2">[</span>
+        <span class="s2">[</span><span class="s3">'intercept'</span><span class="s2">] + list(X_train.columns),</span>
+        <span class="s2">list(lr.intercept_) + list(lr.coef_[</span><span class="s4">0</span><span class="s2">])</span>
+    <span class="s2">]</span>
+<span class="s2">).transpose().set_index(</span><span class="s4">0</span><span class="s2">)</span>
+<span class="s2">coeffs</span>
+<span class="s0">#%% md 
+</span><span class="s2">## Ridge regression 
+</span><span class="s0">#%% 
+</span><span class="s1">from </span><span class="s2">sklearn.linear_model </span><span class="s1">import </span><span class="s2">Ridge</span>
+<span class="s0">#%% 
+# Define Ridge Regression model</span>
+<span class="s2">ridge = Ridge(alpha=</span><span class="s4">0.01</span><span class="s2">)  </span><span class="s0"># Specify the alpha here</span>
+
+<span class="s0"># Fit the Ridge Regression model on the training set</span>
+<span class="s2">ridge.fit(X_train, y_train)</span>
+
+<span class="s0"># Predictions on the training set</span>
+<span class="s2">ridge_train_predictions = ridge.predict(X_train)</span>
+
+<span class="s0"># Calculate MSE for the training set</span>
+<span class="s2">ridge_train_mse = mean_squared_error(y_train, ridge_train_predictions)</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE for Ridge training set:&quot;</span><span class="s2">, ridge_train_mse)</span>
+
+<span class="s0"># Predictions on the validation set</span>
+<span class="s2">ridge_val_predictions = ridge.predict(X_val)</span>
+
+<span class="s0"># Calculate MSE for the validation set</span>
+<span class="s2">ridge_val_mse = mean_squared_error(y_val, ridge_val_predictions)</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE for Ridge validation set:&quot;</span><span class="s2">, ridge_val_mse)</span>
+<span class="s0">#%% 
+# The alpha used by Python's ridge should be the lambda in Hull's book times the number of observations</span>
+<span class="s2">alphas=[</span><span class="s4">0.01</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">, </span><span class="s4">0.02</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">, </span><span class="s4">0.03</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">, </span><span class="s4">0.04</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">, </span><span class="s4">0.05</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">, </span><span class="s4">0.075</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">,</span><span class="s4">0.1</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">,</span><span class="s4">0.2</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">, </span><span class="s4">0.6</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">, </span><span class="s4">1.0</span><span class="s2">*</span><span class="s4">1800</span><span class="s2">]</span>
+<span class="s2">mses=[]</span>
+<span class="s1">for </span><span class="s2">alpha </span><span class="s1">in </span><span class="s2">alphas:</span>
+    <span class="s2">ridge=Ridge(alpha=alpha)</span>
+    <span class="s2">ridge.fit(X_train,y_train)</span>
+    <span class="s2">pred=ridge.predict(X_val)</span>
+    <span class="s2">mses.append(mean_squared_error(y_val,pred))</span>
+    <span class="s2">print(mean_squared_error(y_val,pred))</span>
+<span class="s0">#%% 
+</span><span class="s1">from </span><span class="s2">matplotlib </span><span class="s1">import </span><span class="s2">pyplot </span><span class="s1">as </span><span class="s2">plt</span>
+
+<span class="s2">plt.plot(alphas, mses)</span>
+<span class="s0">#%% md 
+</span><span class="s2">## Lasso regression 
+</span><span class="s0">#%% 
+</span><span class="s1">from </span><span class="s2">sklearn.linear_model </span><span class="s1">import </span><span class="s2">Lasso</span>
+<span class="s0">#%% 
+# Here we produce results for alpha=0.05 which corresponds to lambda=0.1 in Hull's book</span>
+<span class="s2">lasso = Lasso(alpha=</span><span class="s4">0.05</span><span class="s2">)</span>
+<span class="s2">lasso.fit(X_train, y_train)</span>
+
+<span class="s0"># DataFrame with corresponding feature and its respective coefficients</span>
+<span class="s2">coeffs = pd.DataFrame(</span>
+    <span class="s2">[</span>
+        <span class="s2">[</span><span class="s3">'intercept'</span><span class="s2">] + list(X_train.columns),</span>
+        <span class="s2">list(lasso.intercept_) + list(lasso.coef_)</span>
+    <span class="s2">]</span>
+<span class="s2">).transpose().set_index(</span><span class="s4">0</span><span class="s2">)</span>
+<span class="s2">coeffs</span>
+<span class="s0">#%% md 
+</span><span class="s2">### Lasso with different levels of alpha and its mse 
+</span><span class="s0">#%% 
+</span><span class="s2">lasso = Lasso(alpha=</span><span class="s4">0.01</span><span class="s2">)  </span><span class="s0"># You can specify the alpha (regularization strength) here</span>
+
+<span class="s0"># Fit the Lasso Regression model on the training set</span>
+<span class="s2">lasso.fit(X_train, y_train)</span>
+
+<span class="s0"># Predictions on the training set</span>
+<span class="s2">lasso_train_predictions = lasso.predict(X_train)</span>
+
+<span class="s0"># Calculate MSE for the training set</span>
+<span class="s2">lasso_train_mse = mean_squared_error(y_train, lasso_train_predictions)</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE for Lasso training set:&quot;</span><span class="s2">, lasso_train_mse)</span>
+
+<span class="s0"># Predictions on the validation set</span>
+<span class="s2">lasso_val_predictions = lasso.predict(X_val)</span>
+
+<span class="s0"># Calculate MSE for the validation set</span>
+<span class="s2">lasso_val_mse = mean_squared_error(y_val, lasso_val_predictions)</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE for Lasso validation set:&quot;</span><span class="s2">, lasso_val_mse)</span>
+
+<span class="s0">#%% 
+# We now consider different lambda values. The alphas are half the lambdas</span>
+<span class="s2">alphas=[</span><span class="s4">0.01</span><span class="s2">/</span><span class="s4">2</span><span class="s2">, </span><span class="s4">0.02</span><span class="s2">/</span><span class="s4">2</span><span class="s2">, </span><span class="s4">0.03</span><span class="s2">/</span><span class="s4">2</span><span class="s2">, </span><span class="s4">0.04</span><span class="s2">/</span><span class="s4">2</span><span class="s2">, </span><span class="s4">0.05</span><span class="s2">/</span><span class="s4">2</span><span class="s2">, </span><span class="s4">0.075</span><span class="s2">/</span><span class="s4">2</span><span class="s2">, </span><span class="s4">0.1</span><span class="s2">/</span><span class="s4">2</span><span class="s2">]</span>
+<span class="s2">mses=[]</span>
+<span class="s1">for </span><span class="s2">alpha </span><span class="s1">in </span><span class="s2">alphas:</span>
+    <span class="s2">lasso=Lasso(alpha=alpha)</span>
+    <span class="s2">lasso.fit(X_train,y_train)</span>
+    <span class="s2">pred=lasso.predict(X_val)</span>
+    <span class="s2">mses.append(mean_squared_error(y_val,pred))</span>
+    <span class="s2">print(mean_squared_error(y_val, pred))</span>
+<span class="s0">#%% 
+</span><span class="s2">plt.plot(alphas, mses)</span>
+<span class="s0">#%% 
+# Calculate mse for test set when Hull's lambda = 0.04</span>
+<span class="s0"># alpha=0.04/2</span>
+<span class="s0"># lasso=Lasso(alpha=alpha)</span>
+<span class="s0"># lasso.fit(X_train,y_train)</span>
+<span class="s0"># pred=lasso.predict(X_test)</span>
+<span class="s0"># print(mean_squared_error(y_test,pred))</span>
+<span class="s0">#%% 
+# Calculate mse for test set when Hull's lambda =0.1</span>
+<span class="s0"># alpha=0.1/2</span>
+<span class="s0"># lasso=Lasso(alpha=alpha)</span>
+<span class="s0"># lasso.fit(X_train,y_train)</span>
+<span class="s0"># pred=lasso.predict(X_test)</span>
+<span class="s0"># print(mse(y_test,pred))</span>
+<span class="s0">#%% md 
+</span><span class="s2">### Part D 
+</span><span class="s0">#%% 
+# where data_c is the dataset chosen based on MSE, R^2, etc.</span>
+<span class="s0"># shuffling the data</span>
+<span class="s2">shuffled_data_x = data_c.sample(frac = </span><span class="s4">1</span><span class="s2">)</span>
+<span class="s0">#%% 
+# First 1800 data items are training set; the next 600 are the validation set; the remainder are in the test set</span>
+<span class="s2">shuffled_train_x = shuffled_data_x.iloc[:</span><span class="s4">1800</span><span class="s2">] </span>
+<span class="s2">shuffled_val_x = shuffled_data_x.iloc[</span><span class="s4">1800</span><span class="s2">:</span><span class="s4">2400</span><span class="s2">]</span>
+<span class="s2">shuffled_test_x = shuffled_data_x.iloc[</span><span class="s4">2400</span><span class="s2">:]</span>
+<span class="s0">#%% md 
+</span><span class="s2">##### Assuming this step has already been done / is redundant for data_x 
+</span><span class="s0">#%% 
+# Creating the &quot;X&quot; and &quot;y&quot; variables. We drop sale price from &quot;X&quot;</span>
+<span class="s2">x_shuffled_train_x, x_shuffled_val_x, x_shuffled_test_x = shuffled_train_x.drop(</span><span class="s3">'Sale Price'</span><span class="s2">, axis=</span><span class="s4">1</span><span class="s2">), shuffled_val_x.drop(</span><span class="s3">'Sale Price'</span><span class="s2">, axis=</span><span class="s4">1</span><span class="s2">), shuffled_test_x.drop(</span><span class="s3">'Sale Price'</span><span class="s2">, axis=</span><span class="s4">1</span><span class="s2">)</span>
+<span class="s2">y_shuffled_train_x, y_shuffled_val_x, y_shuffled_test_x = shuffled_train_x[[</span><span class="s3">'Sale Price'</span><span class="s2">]], shuffled_val_x[[</span><span class="s3">'Sale Price'</span><span class="s2">]], shuffled_test_x[[</span><span class="s3">'Sale Price'</span><span class="s2">]]</span>
+<span class="s0">#%% md 
+</span><span class="s2">###### Linear Regression 
+</span><span class="s0">#%% 
+# Importing models</span>
+<span class="s1">from </span><span class="s2">sklearn.linear_model </span><span class="s1">import </span><span class="s2">LinearRegression</span>
+<span class="s0">#%% 
+# Fit the Linear Regression model on the training set</span>
+<span class="s2">lr.fit(x_shuffled_train_x, y_shuffled_train_x)</span>
+
+<span class="s0"># Predictions on the training set</span>
+<span class="s2">train_predictions = lr.predict(x_shuffled_train_x)</span>
+
+<span class="s0"># Calculate MSE for the training set</span>
+<span class="s2">train_mse = mean_squared_error(y_shuffled_train_x, train_predictions)</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE for training set:&quot;</span><span class="s2">, train_mse)</span>
+
+<span class="s0"># Predictions on the validation set</span>
+<span class="s2">val_predictions = lr.predict(x_shuffled_val_x)</span>
+
+<span class="s0"># Calculate MSE for the validation set</span>
+<span class="s2">val_mse = mean_squared_error(y_shuffled_val_x, val_predictions)</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE for validation set:&quot;</span><span class="s2">, val_mse)</span>
+
+<span class="s0"># Predictions on the test set</span>
+<span class="s2">test_predictions = lr.predict(x_shuffled_test_x)</span>
+
+<span class="s0"># Calculate MSE for the test set</span>
+<span class="s2">test_mse = mean_squared_error(y_shuffled_test_x, test_predictions)</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE for test set:&quot;</span><span class="s2">, test_mse)</span>
+<span class="s0">#%% 
+# Create dataFrame with corresponding feature and its respective coefficients</span>
+<span class="s2">coeffs = pd.DataFrame(</span>
+    <span class="s2">[</span>
+        <span class="s2">[</span><span class="s3">'intercept'</span><span class="s2">] + list(X_train.columns),</span>
+        <span class="s2">list(lr.intercept_) + list(lr.coef_[</span><span class="s4">0</span><span class="s2">])</span>
+    <span class="s2">]</span>
+<span class="s2">).transpose().set_index(</span><span class="s4">0</span><span class="s2">)</span>
+<span class="s2">coeffs</span>
+<span class="s0">#%% md 
+</span><span class="s2">###### Ridge Regression 
+</span><span class="s0">#%% 
+# Importing Ridge</span>
+<span class="s1">from </span><span class="s2">sklearn.linear_model </span><span class="s1">import </span><span class="s2">Ridge</span>
+<span class="s0">#%% md 
+</span><span class="s2">###### Ridge Regression MSE 
+</span><span class="s0">#%% 
+# Define Ridge Regression model</span>
+<span class="s2">ridge = Ridge(alpha=</span><span class="s4">0.01</span><span class="s2">)  </span><span class="s0"># Specify the alpha here</span>
+
+<span class="s0"># Fit the Ridge Regression model on the training set</span>
+<span class="s2">ridge.fit(x_shuffled_train_x, y_shuffled_train_x)</span>
+
+<span class="s0"># Predictions on the training set</span>
+<span class="s2">ridge_train_predictions = ridge.predict(x_shuffled_train_x)</span>
+
+<span class="s0"># Calculate MSE for the training set</span>
+<span class="s2">ridge_train_mse = mean_squared_error(y_shuffled_train_x, ridge_train_predictions)</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE for Ridge training set:&quot;</span><span class="s2">, ridge_train_mse)</span>
+
+<span class="s0"># Predictions on the validation set</span>
+<span class="s2">ridge_val_predictions = ridge.predict(x_shuffled_val_x)</span>
+
+<span class="s0"># Calculate MSE for the validation set</span>
+<span class="s2">ridge_val_mse = mean_squared_error(y_shuffled_val_x, ridge_val_predictions)</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE for Ridge validation set:&quot;</span><span class="s2">, ridge_val_mse)</span>
+
+<span class="s0"># Predictions on the test set</span>
+<span class="s2">ridge_test_predictions = ridge.predict(x_shuffled_test_x)</span>
+
+<span class="s0"># Calculate MSE for the test set</span>
+<span class="s2">ridge_test_mse = mean_squared_error(y_shuffled_test_x, ridge_test_predictions)</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE for Ridge test set:&quot;</span><span class="s2">, ridge_test_mse)</span>
+<span class="s0">#%% md 
+</span><span class="s2">###### Lasso 
+</span><span class="s0">#%% 
+# Import Lasso</span>
+<span class="s1">from </span><span class="s2">sklearn.linear_model </span><span class="s1">import </span><span class="s2">Lasso</span>
+<span class="s0">#%% 
+# Here we produce results for alpha=0.05 which corresponds to lambda=0.1 in Hull's book</span>
+<span class="s2">lasso = Lasso(alpha=</span><span class="s4">0.05</span><span class="s2">)</span>
+<span class="s2">lasso.fit(X_train, y_train)</span>
+<span class="s0">#%% 
+# DataFrame with corresponding feature and its respective coefficients</span>
+<span class="s2">coeffs = pd.DataFrame(</span>
+    <span class="s2">[</span>
+        <span class="s2">[</span><span class="s3">'intercept'</span><span class="s2">] + list(X_train.columns),</span>
+        <span class="s2">list(lasso.intercept_) + list(lasso.coef_)</span>
+    <span class="s2">]</span>
+<span class="s2">).transpose().set_index(</span><span class="s4">0</span><span class="s2">)</span>
+<span class="s2">coeffs</span>
+<span class="s0">#%% md 
+</span><span class="s2">###### Lasso with different levels of alpha and its mse 
+</span><span class="s0">#%% md 
+</span><span class="s2">###### Lasso regression MSE 
+</span><span class="s0">#%% 
+# Define Lasso Regression model</span>
+<span class="s2">lasso = Lasso(alpha=</span><span class="s4">0.01</span><span class="s2">)  </span><span class="s0"># You can specify the alpha (regularization strength) here</span>
+
+<span class="s0"># Fit the Lasso Regression model on the training set</span>
+<span class="s2">lasso.fit(x_shuffled_train_x, y_shuffled_train_x)</span>
+
+<span class="s0"># Predictions on the training set</span>
+<span class="s2">lasso_train_predictions = lasso.predict(x_shuffled_train_x)</span>
+
+<span class="s0"># Calculate MSE for the training set</span>
+<span class="s2">lasso_train_mse = mean_squared_error(y_shuffled_train_x, lasso_train_predictions)</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE for Lasso training set:&quot;</span><span class="s2">, lasso_train_mse)</span>
+
+<span class="s0"># Predictions on the validation set</span>
+<span class="s2">lasso_val_predictions = lasso.predict(x_shuffled_val_x)</span>
+
+<span class="s0"># Calculate MSE for the validation set</span>
+<span class="s2">lasso_val_mse = mean_squared_error(y_shuffled_val_x, lasso_val_predictions)</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE for Lasso validation set:&quot;</span><span class="s2">, lasso_val_mse)</span>
+
+<span class="s0"># Predictions on the test set</span>
+<span class="s2">lasso_test_predictions = lasso.predict(x_shuffled_test_x)</span>
+
+<span class="s0"># Calculate MSE for the test set</span>
+<span class="s2">lasso_test_mse = mean_squared_error(y_shuffled_test_x, lasso_test_predictions)</span>
+<span class="s2">print(</span><span class="s3">&quot;MSE for Lasso test set:&quot;</span><span class="s2">, lasso_test_mse)</span>
+<span class="s0">#%% 
+</span>
+<span class="s0">#%% 
+</span></pre>
+</body>
+</html>
